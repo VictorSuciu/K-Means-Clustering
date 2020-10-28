@@ -35,14 +35,16 @@ def recompute_centers(points, labels, old_centers, k):
     return centers
 
 def plot_points(points, centers, labels, xmin, xmax, ymin, ymax):
-    xpoints = [p[0] for p in points]
-    ypoints = [p[1] for p in points]
+    xpoints = [p[0] for p in points] + ([xmin - abs(xmin / 10)] * len(centers))
+    ypoints = [p[1] for p in points] + ([0] * len(centers))
     xcenters = [p[0] for p in centers]
     ycenters = [p[1] for p in centers]
+    labels = np.concatenate((labels, np.array(range(len(centers)))))
 
     plt.xlim(xmin, xmax)
     plt.ylim(ymin, ymax)
 
+    # plt.scatter(np.array(range(len(centers))) + ((xmax + xmin) / 2), [0] * len(centers), s=200, c=range(len(centers)))
     plt.scatter(xpoints, ypoints, s=20, c=labels)
     plt.scatter(xcenters, ycenters, s=60, c=centercolor, marker='^')
     plt.show()
@@ -56,8 +58,11 @@ def has_converged(old_centers, new_centers):
 
 
 # points = np.array([(4, 4), (-3, 2), (-1, -1), (2, 6), (-3, -3)])
+# centers = np.array([[0, -1], [0, 1]])
+
 points, labels = datasets.make_blobs(n_samples=500, n_features=2, centers=5, random_state=2)
 centers = np.array([[0, -1], [0, 1], [4, -1], [2, 3], [5, -4], [3, 3]])
+
 old_centers = centers + 1
 
 pad = 1.1
