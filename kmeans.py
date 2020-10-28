@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from sklearn import datasets
+import os
+import shutil
+from PIL import Image
+import glob
 
 centercolor = '#e60e0e'
 
@@ -34,7 +38,7 @@ def recompute_centers(points, labels, old_centers, k):
 
     return centers
 
-def plot_points(points, centers, labels, xmin, xmax, ymin, ymax):
+def plot_points(points, centers, labels, xmin, xmax, ymin, ymax, filename, title, plot_centers=True):
     xpoints = [p[0] for p in points] + ([xmin - abs(xmin / 10)] * len(centers))
     ypoints = [p[1] for p in points] + ([0] * len(centers))
     xcenters = [p[0] for p in centers]
@@ -43,11 +47,15 @@ def plot_points(points, centers, labels, xmin, xmax, ymin, ymax):
 
     plt.xlim(xmin, xmax)
     plt.ylim(ymin, ymax)
-
-    # plt.scatter(np.array(range(len(centers))) + ((xmax + xmin) / 2), [0] * len(centers), s=200, c=range(len(centers)))
-    plt.scatter(xpoints, ypoints, s=20, c=labels)
-    plt.scatter(xcenters, ycenters, s=60, c=centercolor, marker='^')
-    plt.show()
+    if plot_centers:
+        plt.scatter(xpoints, ypoints, s=40, c=labels)
+        plt.scatter(xcenters, ycenters, s=80, c=centercolor, marker='^')
+    else:
+        plt.scatter(xpoints, ypoints, s=40)
+    
+    plt.title(title, loc='left')
+    plt.savefig(filename)
+    plt.clf()
 
 
 def has_converged(old_centers, new_centers):
@@ -56,6 +64,42 @@ def has_converged(old_centers, new_centers):
             return False
     return True
 
+def animate(points, centers):
+    old_centers = centers + 1
+
+    pad = 1.1
+    xmin = np.min(points[:,0]) * pad
+    xmax = np.max(points[:,0]) * pad
+    ymin = np.min(points[:,1]) * pad
+    ymax = np.max(points[:,1]) * pad
+
+    k = len(centers)
+
+    if os.path.exists('frames'):
+        shutil.rmtree('frames')
+    os.makedirs('frames')
+ 
+    plot_points(points, centers, [], xmin, xmax, ymin, ymax, 'frames/0', 'Data Points', False)
+    
+    index = 1
+    while not has_converged(old_centers, centers):
+        labels = label_points(points, centers, k)
+        plot_points(points, centers, labels, xmin, xmax, ymin, ymax, 'frames/' + str(index), 'Epoch: ' + str(index))
+        old_centers = centers
+        centers = recompute_centers(points, labels, old_centers, k)
+        index += 1
+
+    for i in range(2):
+        plot_points(points, centers, labels, xmin, xmax, ymin, ymax, 'frames/' + str(index + i), 'Epoch: ' + str(index - 1) + ' '*8 + 'Done!')
+
+    frames = []
+    images = sorted(glob.glob('frames/*.png'), key=os.path.getmtime)
+    for img in images:
+        frames.append(Image.open(img))
+
+    frames[0].save('kmeans_animation.gif', format='GIF', append_images=frames[1:], save_all=True, duration=1000, loop=0)
+    shutil.rmtree('frames')
+
 
 # points = np.array([(4, 4), (-3, 2), (-1, -1), (2, 6), (-3, -3)])
 # centers = np.array([[0, -1], [0, 1]])
@@ -63,19 +107,4 @@ def has_converged(old_centers, new_centers):
 points, labels = datasets.make_blobs(n_samples=500, n_features=2, centers=5, random_state=2)
 centers = np.array([[0, -1], [0, 1], [4, -1], [2, 3], [5, -4], [3, 3]])
 
-old_centers = centers + 1
-
-pad = 1.1
-xmin = np.min(points[:,0]) * pad
-xmax = np.max(points[:,0]) * pad
-ymin = np.min(points[:,1]) * pad
-ymax = np.max(points[:,1]) * pad
-
-k = len(centers)
-
-index = 0
-while not has_converged(old_centers, centers):
-    labels = label_points(points, centers, k)
-    plot_points(points, centers, labels, xmin, xmax, ymin, ymax)
-    old_centers = centers
-    centers = recompute_centers(points, labels, old_centers, k)
+animate(points, centers)
