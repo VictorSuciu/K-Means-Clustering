@@ -82,22 +82,30 @@ def animate(points, centers):
     plot_points(points, centers, [], xmin, xmax, ymin, ymax, 'frames/0', 'Data Points', False)
     
     index = 1
+    epoch = 1
+    labels = label_points(points, centers, k)
     while not has_converged(old_centers, centers):
-        labels = label_points(points, centers, k)
-        plot_points(points, centers, labels, xmin, xmax, ymin, ymax, 'frames/' + str(index), 'Epoch: ' + str(index))
         old_centers = centers
         centers = recompute_centers(points, labels, old_centers, k)
+        plot_points(points, centers, labels, xmin, xmax, ymin, ymax, 'frames/' + str(index), 'Epoch: ' + str(epoch))
         index += 1
+        labels = label_points(points, centers, k)
+        plot_points(points, centers, labels, xmin, xmax, ymin, ymax, 'frames/' + str(index), 'Epoch: ' + str(epoch))
+        index += 1
+        plot_points(points, centers, labels, xmin, xmax, ymin, ymax, 'frames/' + str(index), 'Epoch: ' + str(epoch))
+        index += 1
+        epoch += 1
+        
 
-    for i in range(2):
-        plot_points(points, centers, labels, xmin, xmax, ymin, ymax, 'frames/' + str(index + i), 'Epoch: ' + str(index - 1) + ' '*8 + 'Done!')
+    for i in range(6):
+        plot_points(points, centers, labels, xmin, xmax, ymin, ymax, 'frames/' + str(index + i), 'Epoch: ' + str(epoch - 1) + ' '*8 + 'Done!')
 
     frames = []
     images = sorted(glob.glob('frames/*.png'), key=os.path.getmtime)
     for img in images:
         frames.append(Image.open(img))
 
-    frames[0].save('kmeans_animation.gif', format='GIF', append_images=frames[1:], save_all=True, duration=1000, loop=0)
+    frames[0].save('kmeans_animation.gif', format='GIF', append_images=frames[1:], save_all=True, duration=500, loop=0)
     shutil.rmtree('frames')
 
 
